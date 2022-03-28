@@ -1,0 +1,36 @@
+{
+  "name": "api-rest",
+  "version": "1.0.0",
+  "description": "Proyecto API RESTful con Node.js y Express para SD",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://scp82@bitbucket.org/scp82/api-rest.git"
+  },
+  "keywords": [
+    "RESTfull",
+    "node",
+    "express",
+    "mongo"
+  ],
+  "author": "Sebastián Cadavid",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://bitbucket.org/scp82/api-rest/issues"
+  },
+  "homepage": "https://bitbucket.org/scp82/api-rest#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.2",
+    "mongodb": "^4.4.1",
+    "mongojs": "^3.1.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.4"
+  }
+}
