@@ -4,9 +4,10 @@ const { response } = require('express');
 const express = require('express');
 const logger = require('morgan');
 const app = express();
-const mongojs = requere('mongojs');
+const mongojs = require('mongojs');
 
 var db = mongojs("SD");
+var id = mongojs.ObjectID;
 
 app.use(logger('dev'));
 app.use(express.urlencoded({extended: false}))
@@ -14,15 +15,13 @@ app.use(express.json())
 
 app.param("coleccion", (request, response, next, coleccion) => {
     console.log('param/api/:coleccion');
-    CSSCounterStyleRule.log('colección: ', coleccion);
+    console.log('coleccion: ', coleccion);
 
     request.collection = db.collection(coleccion);
-    return next;
+    return next();
 })
 
 
-let elementoId = request.params.id;
-let elementoData = request.body;
 
 app.get('/api',(request, response, next)=> {
     console.log('GET /api');
@@ -50,33 +49,38 @@ app.get('/api/:coleccion/:id', (request, response) => {
 });
 
 app.post('/api/:coleccion', (request, response, next) => {
-    const cuerpo = request.body;
+    const elemento = request.body;
     
-    console.log(cuerpo);
-    response.status(200).send(
-        {   resultao:'OK',
-            product: cuerpo
-        });
+    if(!elemento.nombre){
+    	response.status(400).json({
+    		error: 'Bad data',
+    		description: 'Se precisa al menos un campo <nombre>'
+    	});
+    } else {
+    	request.collection.save(elemento, (err, coleccionGuardada) => {
+    		if(err) return next(err);
+    		response.json(coleccionGuardada);
+    	});
+    }
 });
 
-app.put('/api/:coleccion/:id', (request, response) => {
-    const ID = request.params.id;
-    const cuerpo = request.body;
-    
-    response.status(200).send(
-        {_id: `${ID}`,
-            product: cuerpo
-        });
+app.put('/api/:coleccion/:id', (request, response, next) => {
+    let elementoId = request.params.id;
+    let elementoNuevo = request.body;
+    request.collection.update({ _id: id(elementoId)},
+    		{$set: elementoNuevo}, {safe: true, multi: false}, (err, elementoModif) => {
+    	if(err) return next(err);
+    	response.json(elementoModif);
+    });
 });
 
-app.delete('/api/:coleccion/:id', (request, response) => {
-const ID = request.params.id;
+app.delete('/api/:coleccion/:id', (request, response, next) => {
+    let elementoId = request.params.id;
 
-    response.status(200).send(
-        { 
-            resultao: 'OK',
-            _id: `${ID}`        
-        });
+    request.collection.remove({_id: id(elementoId)}, (err, resultado) =>{
+    	if(err) return next(err);
+    	res.json(resultado);
+    });
 });
 
 app.listen(port, () => {
