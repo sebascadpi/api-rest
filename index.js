@@ -2,6 +2,15 @@
 
 // Importes 
 const port = process.env.PORT || 3000;
+
+const https = require('https');
+const fs = require('fs');
+
+const OPTIONS_HTTPS = {
+    key: fs.readFileSync('./cert/key-pen'),
+    cert: fs.readFileSync('./cert/cert.pen')
+};
+
 const express = require('express');
 const logger = require('morgan');
 const app = express();
@@ -124,6 +133,12 @@ app.delete('/api/:coleccion/:id', auth, (request, response, next) => {
     });
 });
 
-app.listen(port, () => {
-    console.log(`API REST ejecutándose en http://localhost:${port}/api/:coleccion/:id`);
+
+https.createServer(OPTIONS_HTTPS, app).listen(port, () => {
+    console.log(`API REST ejecutándose en https://localhost:${port}/api/:coleccion/:id`);
 });
+
+
+/*app.listen(port, () => {
+    console.log(`API REST ejecutándose en http://localhost:${port}/api/:coleccion/:id`);
+});*/
