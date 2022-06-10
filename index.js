@@ -11,17 +11,18 @@ const OPTIONS_HTTPS = {
     cert: fs.readFileSync('./cert/cert.pen')
 };
 
+const TokenService = require('./services/token.service');
+const PassService = require('./services/pass.service');
 const express = require('express');
 const logger = require('morgan');
 const app = express();
 const mongojs = require('mongojs');
 const cors = require('cors');
 
-
-
 // Declaraciones
 var db = mongojs("SD");
 var id = mongojs.ObjectID;
+
 
 var allowMethods = (request, response, next) => {
 	response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -29,25 +30,42 @@ var allowMethods = (request, response, next) => {
 };
 
 var allowCrossTokenHeader = (request, response, next) => {
-	response.header("Access-Control-Allow-Header", "token");
+	response.header("Access-Control-Allow-Headers", "*");
 	return next();
 };
 
-var auth = (request, response, next) => {
-    if(request.headers.token === "password1234"){
-        return next();
-    } else {
-        return next(new Error("No autorizado, por puto"));
-    };
+var allowCrossTokenOrigin = (request, response, next) => {
+    response.header("Access-Control-Allow-Origin", "*");
+    return next();
 };
+
+function auth (request, response, next){
+
+    if(request.headers.authorization !== undefined){
+        const token = request.headers.authorization.split(" ")[1];
+
+    TokenService.decodificaToken(token)
+        .then (userId => {
+            request.user = { id: userId }
+            return next();
+        })
+        .catch (err => response.status(400).json({ result: 'No', msg: err}))
+    }
+    else {
+        response.status(402).json({ result: 'No', msg: 'No se ha mandado un token de autentificación'})
+    }
+    
+}
 
  
 // Middleware
 app.use(logger('dev'));
-app.use(express.urlencoded({extended: false}))
-app.use(express.json())
+app.use(express.urlencoded({extended: false}));
+app.use(express.json());
 app.use(allowCrossTokenHeader);
+app.use(allowCrossTokenOrigin);
 app.use(allowMethods);
+app.use(cors());
 
 
 app.param("coleccion", (request, response, next, coleccion) => {
@@ -58,7 +76,7 @@ app.param("coleccion", (request, response, next, coleccion) => {
     return next();
 })
 
-app.get('/api',(request, response, next)=> {
+app.get('/api', auth,(request, response, next)=> {
     /*console.log('GET /api');
     console.log(request.params);
     console.log(request.collection);
@@ -69,14 +87,14 @@ app.get('/api',(request, response, next)=> {
     })
 })
 
-app.get('/api/:coleccion', (request, response,next) => {
+app.get('/api/:coleccion', auth, (request, response,next) => {
     request.collection.find((err, coleccion) => {
         if(err) return next(err);
         response.json(coleccion);
     });
 });
 
-app.get('/api/:coleccion/:id', (request, response, next) => {
+app.get('/api/:coleccion/:id', auth, (request, response, next) => {
     request.collection.findOne({_id: id(request.params.id)}, (err, elemento) => {
         if(err) return next(err);
         response.json(elemento);
@@ -85,23 +103,8 @@ app.get('/api/:coleccion/:id', (request, response, next) => {
 
 app.post('/api/:coleccion', auth, (request, response, next) => {
     const elemento = request.body;
-    /*const just =request.headers.authorization.split('')[1];
-    tokenService.decodificaToken(jwt)
-        then (userId => {
-            request.user = {id: iserId
-                token: jwt};
-
-            return next();
-        })
-        catch (err =>
-            response.status(400).json({
-                result: 'ko',
-                msg: 'err'
-            });
-        );*/
-
     
-    if(!elemento.nombre){
+    if(!elemento.title){
     	response.status(400).json({
     		error: 'Bad data',
     		description: 'Se precisa al menos un campo <nombre>'
